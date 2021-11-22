@@ -19,6 +19,8 @@ app.use(error);
 
 mongoose.connect(MONGO_URL, {
   useNewUrlParser: true,
+  useCreateIndex: true,
+  useFindAndModify: false,
 });
 
 app.listen(PORT);
