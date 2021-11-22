@@ -8,12 +8,11 @@ const getMovies = (req, res, next) => Movie.find({ owner: req.user._id })
   .then((movie) => res.status(200).send(movie))
   .catch((error) => {
     if (error.name === 'ValidationError') {
-      throw new BadRequest('Неверные данные');
+      next(new BadRequest('Неверные данные'));
     } else {
       next(error);
     }
-  })
-  .catch(next);
+  });
 
 const createMovie = (req, res, next) => {
   const {
@@ -38,36 +37,29 @@ const createMovie = (req, res, next) => {
     .then((movie) => res.status(200).send(movie))
     .catch((error) => {
       if (error.name === 'ValidationError') {
-        throw new UnauthorizedError('Переданы некорректные данные при создании карточки.');
+        next(new UnauthorizedError('Переданы некорректные данные при создании карточки.'));
       } else {
         next(error);
       }
-    })
-    .catch(next);
+    });
 };
 
 const deleteMovie = (req, res, next) => {
-  Movie.findOne({ _id: req.params.movieId })
+  Movie.findById(req.params.movieId)
+    .orFail(new NotFoundError('Фильм с указанным _id не найден'))
     .then((movie) => {
-      if (movie) {
-        if (movie.owner.toString() === req.user._id) {
-          Movie.deleteOne({ _id: movie._id })
-            .then(res.send({ message: 'Фильм удален из избранного' }));
-        } else {
-          throw new ForbiddenError('Чужие фильмы удалять запрещено');
-        }
-      } else {
-        throw new NotFoundError('Фильм с указанным _id не найден');
+      if (movie.owner.toString() === req.user._id) {
+        return Movie.deleteOne({ _id: movie._id })
+          .then(() => res.status(200).send({ message: 'Фильм удален из избранного' }));
       }
+      throw new ForbiddenError('Чужие фильмы удалять запрещено');
     })
     .catch((error) => {
       if (error.name === 'CastError') {
-        throw new UnauthorizedError('Невалидный id');
-      } else {
-        next(error);
+        next(new UnauthorizedError('Невалидный id'));
       }
-    })
-    .catch(next);
+      next(error);
+    });
 };
 
 module.exports = { getMovies, createMovie, deleteMovie };
