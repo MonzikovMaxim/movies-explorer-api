@@ -5,7 +5,7 @@ const UnauthorizedError = require('../errors/unauthorized');
 const ForbiddenError = require('../errors/forbidden');
 
 const getMovies = (req, res, next) => Movie.find({ owner: req.user._id })
-  .then((movie) => res.status(200).send(movie))
+  .then((movie) => res.send(movie))
   .catch((error) => {
     if (error.name === 'ValidationError') {
       next(new BadRequest('Неверные данные'));
@@ -34,7 +34,7 @@ const createMovie = (req, res, next) => {
     nameRU,
     nameEN,
   })
-    .then((movie) => res.status(200).send(movie))
+    .then((movie) => res.send(movie))
     .catch((error) => {
       if (error.name === 'ValidationError') {
         next(new UnauthorizedError('Переданы некорректные данные при создании карточки.'));
@@ -50,7 +50,7 @@ const deleteMovie = (req, res, next) => {
     .then((movie) => {
       if (movie.owner.toString() === req.user._id) {
         return Movie.deleteOne({ _id: movie._id })
-          .then(() => res.status(200).send({ message: 'Фильм удален из избранного' }));
+          .then(() => res.send({ message: 'Фильм удален из избранного' }));
       }
       throw new ForbiddenError('Чужие фильмы удалять запрещено');
     })
